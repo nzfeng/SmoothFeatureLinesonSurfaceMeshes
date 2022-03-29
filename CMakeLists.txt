@@ -31,6 +31,7 @@ option(LIBIGL_USE_STATIC_LIBRARY "Use LibIGL as static library" OFF)
 option(LIBIGL_WITH_NANOGUI     "Use Nanogui menu"   ON)
 
 # libigl options: choose your dependencies (by default everything is OFF except opengl) 
+option(LIBIGL_GLFW "Build target igl::glfw" ON)
 option(LIBIGL_WITH_VIEWER      "Use OpenGL viewer"  ON)
 option(LIBIGL_WITH_OPENGL      "Use OpenGL"         ON)
 option(LIBIGL_WITH_OPENGL_GLFW "Use GLFW"           ON)
@@ -45,17 +46,21 @@ option(LIBIGL_WITH_COMISO      "Use CoMiso"         OFF)
 option(LIBIGL_WITH_MATLAB      "Use Matlab"         OFF) # This option is not supported yet
 option(LIBIGL_WITH_MOSEK       "Use MOSEK"          OFF) # This option is not supported yet
 option(LIBIGL_WITH_CGAL        "Use CGAL"           OFF)
+set(LIBIGL_WITH_OPENGL_GLFW_IMGUI OFF CACHE BOOL "Use ImGui" )
 if(LIBIGL_WITH_CGAL) # Do not remove or move this block, the cgal build system fails without it
   find_package(CGAL REQUIRED)
   set(CGAL_DONT_OVERRIDE_CMAKE_FLAGS TRUE CACHE BOOL "CGAL's CMAKE Setup is super annoying ")
   include(${CGAL_USE_FILE})
 endif()
 
+option(FETCHCONTENT_SOURCE_DIR_LIBIGL ON)
+
 # Adding libigl: choose the path to your local copy libigl 
 # This is going to compile everything you requested 
 #message(FATAL_ERROR "${PROJECT_SOURCE_DIR}/../libigl/cmake")
-add_definitions(-Wno-unused-variable) # Embree in LibIGL currently emits unused var warnings
-add_subdirectory("${LIBIGL_INCLUDE_DIR}/../shared/cmake" "libigl")
+#add_definitions(-Wno-unused-variable) # Embree in LibIGL currently emits unused var warnings
+#add_subdirectory("${LIBIGL_INCLUDE_DIR}/../shared/cmake" "libigl")
+add_subdirectory(../common-deps/deps/libigl deps/libigl)
 
 remove_definitions(-Wno-unused-variable) # We want unused var warnings for our code...
 add_definitions(-Wall)          # ... and everything else
@@ -80,6 +85,12 @@ else (TRAVISCI_BUILD)
     FILE(GLOB SOURCES src/*.cpp)
 endif (TRAVISCI_BUILD)
 
+find_package (Eigen3 3.3 REQUIRED NO_MODULE)
+include_directories(${EIGEN_INCLUDE_DIR})
+
 add_executable(${PROJECT_NAME}_bin ${SOURCES} ${LIBIGL_EXTRA_SOURCES})
-target_link_libraries(${PROJECT_NAME}_bin ${LIBIGL_LIBRARIES} ${LIBIGL_EXTRA_LIBRARIES})
+target_link_libraries(${PROJECT_NAME}_bin ${LIBIGL_LIBRARIES} ${LIBIGL_EXTRA_LIBRARIES} Eigen3::Eigen igl::core igl::opengl igl::opengl_glfw igl::predicates)
 target_include_directories(${PROJECT_NAME}_bin SYSTEM PRIVATE ${LIBIGL_INCLUDE_DIRS})
+
+# Add libIGL in header-only mode.
+#target_include_directories(${PROJECT_NAME}_bin PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../common-deps/deps/libigl/include")
