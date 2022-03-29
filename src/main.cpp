@@ -10,6 +10,9 @@
 #include <igl/per_face_normals.h>
 #include <igl/per_vertex_normals.h>
 // #include <igl/polyvector_field_poisson_reconstruction.h>
+#include <igl/opengl/glfw/imgui/ImGuiHelpers.h>
+#include <igl/opengl/glfw/imgui/ImGuiMenu.h>
+#include <igl/opengl/glfw/imgui/ImGuiPlugin.h>
 #include <igl/readOFF.h>
 #include <igl/serialize.h>
 #include <igl/slice.h>
@@ -326,6 +329,24 @@ int main(int argc, char *argv[]) {
   //   v.screen->performLayout();
   //   return false;
   // };
+
+  // Attach a menu plugin
+  igl::opengl::glfw::imgui::ImGuiPlugin plugin;
+  viewer.plugins.push_back(&plugin);
+  igl::opengl::glfw::imgui::ImGuiMenu menu;
+  plugin.widgets.push_back(&menu);
+
+  // Add content to the default menu window
+  menu.callback_draw_viewer_menu = [&]() {
+    // Draw parent menu content
+    menu.draw_viewer_menu();
+
+    // Add new group
+    if (ImGui::CollapsingHeader("New Group", ImGuiTreeNodeFlags_DefaultOpen)) {
+      // Expose variable directly ...
+      ImGui::InputDouble("threshold", &threshold, 0, 0, "%.4f");
+    }
+  };
 
   // Initialize scale for displaying vectors
   vScale = 0.5 * igl::avg_edge_length(V, F);
